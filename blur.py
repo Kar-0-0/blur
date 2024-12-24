@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 class Blur:
     def __init__(self, img):
-        self.img = Image.open('snowsper.png')
+        self.img = Image.open('pupsikipaul.png')
         self.img = np.array(self.img)
         self.img = torch.tensor(self.img).float()
         self.img = self.img.unsqueeze(0)
@@ -20,14 +20,14 @@ class Blur:
         elif type == 'default':
             kernel = torch.ones((channels, size, size)).float()
             kernel = kernel / kernel.sum(1, keepdim=True)
-            kernel = kernel.unsqueeze(0)
+            kernel = kernel.unsqueeze(1)
             return kernel
 
     def blur(self, in_channels, kernel_size):
         kernel = self.kernel_init('default', in_channels, kernel_size, 1)
 
-        img = F.conv2d(self.img, kernel)
-        img = img.permute(0, 1, 2, 3).squeeze(0).squeeze(0)
+        img = F.conv2d(self.img, kernel, groups=4)
+        img = img.permute(0, 2, 3, 1).squeeze(0).squeeze(0)
         img = img.detach().cpu().numpy()
         img = (img - img.min()) / (img.max() - img.min()) * 255
         img = img.astype(np.uint8)
