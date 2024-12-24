@@ -10,6 +10,7 @@ class Filter:
         self.img = np.array(self.img)
         self.img = torch.tensor(self.img).float()
         self.img = self.img.unsqueeze(0)
+        print(self.img.shape)
         self.img = self.img.permute(0, 3, 1, 2)
         
     def kernel_init(self, type, channels, size, sigma):
@@ -69,10 +70,46 @@ class Filter:
             kernel = kernel.repeat(channels, 1, 1, 1)
             return kernel 
         
+        elif type == "horiz edge":
+            print("Detecting horizontal edges...")
+            kernel = torch.zeros((size, size)).tolist()
+            for i in range(size):
+                for j in range(size):
+                    if i == (size // 2):
+                        kernel[i][j] = 0
+                    elif i % 2 == 0:
+                        if i < (size // 2):
+                            if j <= (size // 2):
+                                kernel[i][j] = -(2 * (j + 1))
+                            else:
+                                kernel[i][j] = -(abs(kernel[i][j-1]) - 2)
+                        else:
+                            if j <= (size // 2):
+                                kernel[i][j] = (2 * (j + 1))
+                            else:
+                                kernel[i][j] = (kernel[i][j-1] - 2)
+                    else:
+                        if i < (size // 2):
+                            if j <= (size // 2):
+                                kernel[i][j] = -(j + 1)
+                            else:
+                                kernel[i][j] = -(abs(kernel[i][j-1]) - 1)
+                        else:
+                            if j <= (size // 2):
+                                kernel[i][j] = (j + 1)
+                            else:
+                                kernel[i][j] = (kernel[i][j-1] - 1)
+
+            kernel = torch.tensor(kernel).unsqueeze(0).float()      
+            kernel = kernel.repeat(channels, 1, 1, 1)
+            print(kernel.shape)
+            print(kernel)
+            return kernel 
+
     def filter(self, in_channels, kernel_size, type):
         kernel = self.kernel_init(type, in_channels, kernel_size, 2000)
 
-        img = F.conv2d(self.img, kernel, groups=4)
+        img = F.conv2d(self.img, kernel, groups=in_channels)
         img = img.permute(0, 2, 3, 1).squeeze(0).squeeze(0)
         img = img.detach().cpu().numpy()
         img = (img - img.min()) / (img.max() - img.min()) * 255
@@ -83,6 +120,6 @@ class Filter:
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    img = 'snowsper.png'
+    img = 'images/horizorgb.jpg'
     my_blur = Filter(img)
-    my_blur.filter(4, 5, 'vert edge')
+    my_blur.filter(3, 5, 'horiz edge')
