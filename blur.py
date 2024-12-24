@@ -13,7 +13,7 @@ class Filter:
         print(self.img.shape)
         self.img = self.img.permute(0, 3, 1, 2)
     
-    def guassian_blur(self, channels, size, sigma):
+    def guassian_blur(self, channels:int, size:int, sigma:float) -> None:
         print("Applying Guassian Blur...")
         x = np.arange(size) - size // 2
         y = np.arange(size) - size // 2
@@ -24,16 +24,16 @@ class Filter:
         kernel = kernel / kernel.sum(1, keepdim=True)
         kernel = kernel.unsqueeze(0)
         kernel = kernel.repeat(channels, 1, 1, 1)
-        self.filter(kernel, channels)
+        self.filter(kernel, channels, 'guassian blur')
     
-    def default_blur(self, channels, size):
+    def default_blur(self, channels:int, size:int) -> None:
         print("Applying Default Blur...")
         kernel = torch.ones((channels, size, size)).float()
         kernel = kernel / kernel.sum(1, keepdim=True)
         kernel = kernel.unsqueeze(1)
-        self.filter(kernel, channels)  
+        self.filter(kernel, channels, 'default blur')  
     
-    def vert_edge(self, channels, size):
+    def vert_edge(self, channels:int, size:int) -> None:
         print("Detecting Vertical Edges...")
         kernel = torch.zeros((size, size)).tolist()
 
@@ -66,9 +66,9 @@ class Filter:
 
         kernel = torch.tensor(kernel).unsqueeze(0).float()      
         kernel = kernel.repeat(channels, 1, 1, 1)
-        self.filter(kernel, channels)
+        self.filter(kernel, channels, 'verticle edge')
     
-    def horiz_edge(self, channels, size):
+    def horiz_edge(self, channels:int, size:int) -> None:
         print("Detecting horizontal edges...")
         kernel = torch.zeros((size, size)).tolist()
         for i in range(size):
@@ -100,9 +100,9 @@ class Filter:
 
         kernel = torch.tensor(kernel).unsqueeze(0).float()      
         kernel = kernel.repeat(channels, 1, 1, 1)
-        self.filter(kernel, channels)
+        self.filter(kernel, channels, 'horiz edge')
 
-    def sharpen(self, channels):
+    def sharpen(self, channels:int) -> None:
         print("Sharpening image...")
         kernel = torch.tensor([
             [0, -1, 0],
@@ -110,20 +110,34 @@ class Filter:
             [0, -1, 0]
         ]).unsqueeze(0).float()
         kernel = kernel.repeat(channels, 1, 1, 1)
-        self.filter(kernel, channels)
+        self.filter(kernel, channels, 'sharpen')
     
-    def filter(self, kernel, channels):
-        img = F.conv2d(self.img, kernel, groups=channels)
-        img = img.permute(0, 2, 3, 1).squeeze(0).squeeze(0)
-        img = img.detach().cpu().numpy()
-        img = (img - img.min()) / (img.max() - img.min()) * 255
+    def filter(self, kernel:torch.tensor, channels:int, type:str) -> None:
+        img = F.conv2d(self.img, kernel, groups=channels, padding=1)
+
+        if type == 'sharpen':
+            img = torch.clamp(img, 0, 255)
+            img = img.permute(0, 2, 3, 1).squeeze(0).squeeze(0)
+            img = img.detach().cpu().numpy()
+        else:
+            img = img.permute(0, 2, 3, 1).squeeze(0).squeeze(0)
+            img = img.detach().cpu().numpy()
+            for i in range(img.shape[2]):
+                channel = img[..., i]
+                channel = (channel - channel.min()) / (channel.max() - channel.min()) * 255
+                img[..., i] = channel
+
         img = img.astype(np.uint8)
+
+        if img.shape[2] == 4: 
+            img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGRA)
+
 
         cv2.imshow('main', img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    img = 'images/snowsper.png'
+    img = 'images/pupsikipaul.png'
     my_blur = Filter(img)
-    my_blur.sharpen(4)
+    my_blur.horiz_edge(4, 5)
