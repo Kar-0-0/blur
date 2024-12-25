@@ -6,11 +6,11 @@ import torch.nn.functional as F
 
 class Filter:
     def __init__(self, img):
-        self.img = Image.open(img)
-        self.img = np.array(self.img)
+        # self.img = Image.open(img)
+        self.img = np.array(img)
         self.img = torch.tensor(self.img).float()
         self.img = self.img.unsqueeze(0)
-        print(self.img.shape)
+        # print(self.img.shape)
         self.img = self.img.permute(0, 3, 1, 2)
     
     def guassian_blur(self, channels:int, size:int, sigma:float) -> None:
@@ -138,13 +138,4 @@ class Filter:
         # cv2.destroyAllWindows()
         return img
 
-import streamlit as st
-
-img = 'images/snowsper.png'
-my_filter = Filter(img)
-# test = my_filter.sharpen(4)
-
-st.title("Filter Images")
-
-st.file_uploader("Upload any image")
 
