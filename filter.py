@@ -24,14 +24,14 @@ class Filter:
         kernel = kernel / kernel.sum(1, keepdim=True)
         kernel = kernel.unsqueeze(0)
         kernel = kernel.repeat(channels, 1, 1, 1)
-        self.filter(kernel, channels, 'guassian blur')
+        return self.filter(kernel, channels, 'guassian blur')
     
     def default_blur(self, channels:int, size:int) -> None:
         print("Applying Default Blur...")
         kernel = torch.ones((channels, size, size)).float()
         kernel = kernel / kernel.sum(1, keepdim=True)
         kernel = kernel.unsqueeze(1)
-        self.filter(kernel, channels, 'default blur')  
+        return self.filter(kernel, channels, 'default blur')  
     
     def vert_edge(self, channels:int, size:int) -> None:
         print("Detecting Vertical Edges...")
@@ -66,7 +66,7 @@ class Filter:
 
         kernel = torch.tensor(kernel).unsqueeze(0).float()      
         kernel = kernel.repeat(channels, 1, 1, 1)
-        self.filter(kernel, channels, 'verticle edge')
+        return self.filter(kernel, channels, 'verticle edge')
     
     def horiz_edge(self, channels:int, size:int) -> None:
         print("Detecting horizontal edges...")
@@ -100,7 +100,7 @@ class Filter:
 
         kernel = torch.tensor(kernel).unsqueeze(0).float()      
         kernel = kernel.repeat(channels, 1, 1, 1)
-        self.filter(kernel, channels, 'horiz edge')
+        return self.filter(kernel, channels, 'horiz edge')
 
     def sharpen(self, channels:int) -> None:
         print("Sharpening image...")
@@ -110,7 +110,7 @@ class Filter:
             [0, -1, 0]
         ]).unsqueeze(0).float()
         kernel = kernel.repeat(channels, 1, 1, 1)
-        self.filter(kernel, channels, 'sharpen')
+        return self.filter(kernel, channels, 'sharpen')
     
     def filter(self, kernel:torch.tensor, channels:int, type:str) -> None:
         img = F.conv2d(self.img, kernel, groups=channels, padding=1)
@@ -132,12 +132,19 @@ class Filter:
         if img.shape[2] == 4: 
             img = cv2.cvtColor(img, cv2.COLOR_RGBA2BGRA)
 
+        
+        # cv2.imshow('main', img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+        return img
 
-        cv2.imshow('main', img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+import streamlit as st
 
-if __name__ == "__main__":
-    img = 'images/pupsikipaul.png'
-    my_blur = Filter(img)
-    my_blur.horiz_edge(4, 5)
+img = 'images/snowsper.png'
+my_filter = Filter(img)
+# test = my_filter.sharpen(4)
+
+st.title("Filter Images")
+
+st.file_uploader("Upload any image")
+
